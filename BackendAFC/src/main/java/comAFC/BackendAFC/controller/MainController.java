@@ -79,32 +79,125 @@ public class MainController {
               PreparedStatement statement2 = connection.prepareStatement(sql2);
               statement1.executeUpdate();
               statement2.setString(1, food);
+              statement2.executeUpdate();
 //               String sql =("INSERT INTO food_name(name) VALUE (\""+food+"\");" + "create table "+food+" ( src varchar(128),info varchar(128),price int ,name varchar(64));");
 //              resultSet = statement.executeUpdate("create table "+food+" ( src varchar(128),info varchar(128),price int ,name varchar(64));");
           } else {
-              return "You not admin";
+              return "{ \"connect\" : \"False\"}";
           }
       } catch (Exception e) {
-          return "error" + admin + password + food + e.getMessage() ;
+          return "{ \"connect\" : \"Error\"}" ;
       }
-      return "Новый раздел успешно добавлен";
+      return "{ \"connect\" : \"True\"}";
     }
 
     @GetMapping("/api/addstring")
     @CrossOrigin (origins = "http://127.0.0.1:5501")
-    public String AdminAddString(String src, String info, Long price, String name, String table){
+    public String AdminAddString(String src, String info, Long price, String name, String table, String admin, String password){
         try {
             Connection connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
             String sql = "INSERT INTO "+table+"(src, info,price,name) VALUE (?,?,?,?);";
             PreparedStatement statement1 = connection.prepareStatement(sql);
-            statement1.setString(1, src);
-            statement1.setString(2, info);
-            statement1.setLong(3, price);
-            statement1.setString(4, name);
-            statement1.executeUpdate();
+            if(admin.equals("admin") && password.equals("12345")){
+                statement1.setString(1, src);
+                statement1.setString(2, info);
+                statement1.setLong(3, price);
+                statement1.setString(4, name);
+                statement1.executeUpdate();
+            } else {
+                return "{ \"connect\" : \"False\"}";
+            }
         } catch (SQLException e) {
-            return "error" + e.getMessage();
+            return "{ \"connect\" : \"Error\"}" ;
         }
-        return "Товар успешно добавлен";
+        return "{ \"connect\" : \"True\"}";
+    }
+    @GetMapping("/api/getfood")
+    @CrossOrigin (origins = "http://127.0.0.1:5501")
+    public String GetFood(){
+        String text = "{";
+        try{
+            Connection connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery("select * from food_name");
+            Statement statement1 = connection.createStatement();
+            while (resultSet.next()) {
+                if(text.equals("{")){
+                }else{
+                    text = text + ",";
+                }
+                text = text + " \""+resultSet.getString("name")+"\" : [ ";
+                String text1 = text;
+                ResultSet resultSet1 = statement1.executeQuery("select * from "+ resultSet.getString("name"));
+               while(resultSet1.next()){
+                   if(text.equals(text1)){
+                   } else {
+                       text = text + ",";
+                   }
+                   text = text + "{\"src\": \""+resultSet1.getString("src")+":\",\"info\": \""+resultSet1.getString("info")+"\", \"price\": "+resultSet1.getString("price")+", \"name\":\""+resultSet1.getString("name")+"\"}";
+               }
+                text = text + "]";
+            }
+        } catch (SQLException e) {
+            return (("error") + e.getMessage())+ text;
+        }
+text = text + "}";
+        return text;
+    }
+
+    @GetMapping("/api/delfood")
+    @CrossOrigin (origins = "http://127.0.0.1:5501")
+    public String delFood(String food, String table, String admin, String password ){
+        //DELETE FROM burger WHERE name = 'burger1';
+        try {
+            Connection connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            if (admin.equals("admin") && password.equals("12345")) {
+                PreparedStatement statement = connection.prepareStatement("DELETE FROM "+table+" WHERE name = '"+food + "' ");
+                statement.executeUpdate();
+                return "{ \"connect\" : \"True\"}";
+            } else {
+                return "{ \"connect\" : \"False\"}";
+            }
+        } catch (Exception e) {
+            return "{ \"connect\" : \"error\"}";
+        }
+    }
+
+    @GetMapping("/api/deltable")
+    @CrossOrigin (origins = "http://127.0.0.1:5501")
+    public String delTable(String table, String admin, String password ){
+        try {
+            if (admin.equals("admin") && password.equals("12345")) {
+                Connection connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+                PreparedStatement statement = connection.prepareStatement("DELETE FROM food_name WHERE name = '"+table + "' ");
+                statement.executeUpdate();
+                PreparedStatement statement1 = connection.prepareStatement("DROP table " +table);
+                statement1.executeUpdate();
+
+                return "{ \"connect\" : \"True\"}";
+            } else {
+                return "{ \"connect\" : \"False\"}";
+            }
+        } catch (Exception e) {
+            return "{ \"connect\" : \"False\"}";
+        }
+
+
+    }
+    @GetMapping("/api/reg")
+    @CrossOrigin (origins = "http://127.0.0.1:5501")
+    public String reg(String name,  String password , String email){
+        try {
+            Connection connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            String sql = "INSERT INTO Users(user_name, user_password,user_email) VALUE (?,?,?);";
+            PreparedStatement statement1 = connection.prepareStatement(sql);
+            statement1.setString(1, name);
+            statement1.setString(2, password);
+            statement1.setString(3, email);
+            statement1.executeUpdate();
+            return "{ \"connect\" : \"True\"}";
+        } catch (Exception e) {
+            return "{ \"connect\" : \"False\"}";
+        }
     }
 }
